@@ -2,68 +2,48 @@
   {{ $isntDefault := not (or (eq (trim $.Site.Params.contentTypeName " ") "posts") (eq (trim $.Site.Params.contentTypeName " ") "")) }}
   {{ $contentTypeName := cond $isntDefault (string $.Site.Params.contentTypeName) "posts" }}
 
-  {{ $PageContext := . }}
-  {{ if .IsHome }}
-    {{ $PageContext = .Site }}
-  {{ end }}
-  {{ $paginator := .Paginate (where $PageContext.RegularPages "Type" $contentTypeName) }}
-
-  {{ if .Content }}
-    <div class="index-content {{ if .Params.framed -}}framed{{- end -}}">
-      {{ .Content }}
-    </div>
-  {{ end }}
-
-  <div class="posts">
-    {{ range $paginator.Pages }}
-    <div class="post on-list">
-      <h1 class="post-title"><a href="{{ .Permalink }}">{{ .Title | markdownify }}</a></h1>
-      <div class="post-meta">
-        {{ if .Date }}
-          <span class="post-date">
-            {{ .Date.Format ($.Site.Params.DateFormatList | default "2006-01-02") }}
-          </span>
-
-          {{ if $.Site.Params.LastModDisplay }}
-            {{ partial "lastmod.html" . }}
+  <div class="archive">
+    <h1>Archive</h1>
+    {{ range .Site.RegularPages.GroupByPublishDate "2006" }}
+      {{ if ne .Key "0001" }}
+        <div class="archive__group-year">
+          <h2 class="archive__group-year-header">{{ replace .Key "0001" "" }}</h2>
+          {{ range .Pages.GroupByDate "January" }}
+            <div class="archive__group-month">
+              <h3 class="archive__group-month-header">{{ .Key }}</h3>
+              <div class="archive__group-posts">
+                {{ range where .Pages "Type" $contentTypeName }}
+                  {{ if eq .Kind "page" }}
+                    <div class="archive__post">
+                      <h3 class="archive__post-title">
+                        <a href="{{ .Permalink }}">{{ .Title | markdownify }}</a>
+                      </h3>
+                      <div class="archive__post-meta">
+                        <span class="archive__post-date">
+                          {{ .Date.Format ($.Site.Params.DateFormatList | default "2006-01-02") }}
+                        </span>
+                        {{ with .Params.Author }}
+                          <span class="archive__post-author"
+                            >—
+                            {{ $.Site.Params.WrittenBy | default "Written by" }}
+                            {{ . }}
+                          </span>
+                        {{ end }}
+                        {{ if $.Site.Params.ShowReadingTime }}
+                          <span class="archive__post-read-time"
+                            >— {{ .ReadingTime }}
+                            {{ $.Site.Params.MinuteReadingTime | default "min read" }}</span
+                          >
+                        {{ end }}
+                      </div>
+                    </div>
+                  {{ end }}
+                {{ end }}
+              </div>
+            </div>
           {{ end }}
-        {{ end }}
-
-        {{ with .Params.Author }}
-          <span class="post-author">— {{ $.Site.Params.WrittenBy | default "Written by" }} {{ . }}</span>
-        {{ end }}
-
-        {{ if $.Site.Params.ShowReadingTime }}
-          <span class="post-read-time">— {{ .ReadingTime }} {{ $.Site.Params.MinuteReadingTime | default "min read" }}</span>
-        {{ end }}
-      </div>
-
-      {{ if .Params.tags }}
-        <span class="post-tags">
-          {{ range .Params.tags }}
-            <a href="{{ (urlize (printf "tags/%s" . )) | absLangURL }}/">#{{ . }}</a>&nbsp;
-          {{ end }}
-        </span>
+        </div>
       {{ end }}
-
-      {{ if .Params.Cover }}
-        {{ partial "postcover.html" . }}
-      {{ end }}
-
-      <div class="post-content">
-        {{ with .Description }}
-          {{ . | markdownify }}
-        {{ else }}
-          {{ if .Truncated }}
-            {{ .Summary }}
-          {{ end }}
-        {{ end }}
-      </div>
-      {{ if not .Params.hideReadMore }}
-        <div><a class="read-more button" href="{{.RelPermalink}}">{{ $.Site.Params.ReadMore | default "Read more" }} →</a></div>
-      {{ end }}
-    </div>
     {{ end }}
-    {{ partial "pagination.html" . }}
   </div>
 {{ end }}
